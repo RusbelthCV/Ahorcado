@@ -4,62 +4,81 @@ const body_parser = require("body-parser");
 const session = require("cookie-session");
 const port = 3000;
 
-app.use(body_parser.urlencoded({extended: true}));
-app.use(session({secret: "todotopsecret"}));
-app.set("view engine","jade");
+app.use(body_parser.urlencoded({ extended: true }));
+app.use(session({ secret: "todotopsecret" }));
+app.set("view engine", "jade");
 
-app.use(function(req,res,next){
-    if(typeof(req.session.palabra) == 'undefined'){
-        req.session.palabra = '';
+app.use(function (req, res, next) {
+    if (typeof (req.session.palabra) == 'undefined') {
+        req.session.palabra = "";
         req.session.letras = [];
-        req.session.acertadas = '';
+        req.session.acertadas = [];
+        req.session.intentos = 0;
+        req.session.guiones = "";
     }
     next();
 });
 
-app.get("/todo",function(req,res){
-    if(req.session.palabra == ''){
+app.get("/todo", function (req, res) {
+    if (req.session.palabra == '') {
         res.redirect("/todo/palabra");
     }
-    else{
+    else {
         res.redirect("/todo/letras");
     }
 });
 
-app.get("/todo/palabra",function(req,res){
+app.get("/todo/palabra", function (req, res) {
     res.render("palabra");
 });
 
-app.post("/todo/add",function(req,res){
+app.post("/todo/add", function (req, res) {
     req.session.palabra = req.body.palabra;
+    for (let i = 0; i < req.session.palabra.length; i++) {
+        req.session.guiones = req.session.guiones + "-";
+    }
     res.redirect("/todo");
 });
 
-app.get("/todo/letras",function(req,res){
-    res.render("letras",{palabra: req.session.palabra, letras: req.session.letras, acertadas: req.session.acertadas}); 
+app.get("/todo/letras", function (req, res) {
+    
+    if (req.session.intentos <= 5) {
+
+        res.render("letras", { palabra: req.session.guiones, letras: req.session.letras });
+    }
+    else {
+        res.render("game_over");
+    }
 });
 
-app.post("/todo/comprobar",function(req,res){
+app.post("/todo/comprobar", function (req, res) {
     let letra = req.body.letra;
-    let pos = req.session.palabra.indexOf(letra) 
-    if(pos == -1){
-        req.session.letras.push(letra);
-        res.redirect("/todo/letras");
+    if(req.session.palabra.indexOf(letra) > -1){
+        req.session.acertadas.push(letra);
     }
     else{
-        req.session.acertadas.charAt(pos) = letra;
-        res.render("/todo/letras");
+        req.session.letras.push(letra);
+        req.session.intentos++;
     }
+    req.session.guiones = req.session.palabra.split("").map(el => req.session.acertadas.indexOf(el) === -1 ? "-" : el).join("");
+    if(req.session.guiones == req.session.palabra){
+        res.redirect("ganador");
+    }
+    else{
+        res.redirect("/todo/letras");
+    }
+    
 });
 
-// app.get("/todo/fallo",function(req,res){
-//     res.render("letras",{letras: req.session.letras});
-// })
-
-app.use(function(req,res){
+app.get("/todo/otraPartida",function(req,res){
+    req.session=null;
     res.redirect("/todo");
 });
 
-app.listen(port,function(){
-    console.log("Escuchando desde el puerto: "+port);
+app.use(function (req, res) {
+    res.redirect("/todo");
+});
+
+app.listen(port, function () {
+    console.log("Escuchando desde el puerto: " + port);
 });

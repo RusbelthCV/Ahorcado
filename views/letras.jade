@@ -10,10 +10,8 @@ html
                         input(class = "form-control" name = "letra" type = "text" maxlength = "1" required)
                     button(class = "btn btn-primary" type = "submit") Enviar
             div(class = "row")
-                
-                div(class = "col-12") 
-                    each letra in letras
-                        span #{letra}
-                div(class = "col-12") 
-                    each acertada in acertadas  
-                        span #{acertada}
+                each letra in letras
+                    span(class = "m-3") #{letra}
+            div(class = "row")
+                each letra in palabra
+                    span(class = "m-3") #{letra}
